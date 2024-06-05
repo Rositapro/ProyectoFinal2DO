@@ -11,6 +11,8 @@ using iTextSharp.text.pdf;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using DocumentFormat.OpenXml.Drawing;
+using System.Diagnostics;
 
 
 namespace ProyectoFinal2DO
@@ -32,8 +34,8 @@ namespace ProyectoFinal2DO
 
         private void ConfigureComboBox()
         {
-            cmbTipoTrabajador.Items.Add("Ingeniero");
-            cmbTipoTrabajador.Items.Add("Obrero");
+            cmbTipoTrabajador.Items.Add("Engineer");
+            cmbTipoTrabajador.Items.Add("Worker");
             cmbTipoTrabajador.SelectedIndex = 0;
         }
 
@@ -58,7 +60,7 @@ namespace ProyectoFinal2DO
             txtAge.KeyPress += NumericTextBox_KeyPress;
             txtHoursWorked.KeyPress += NumericTextBox_KeyPress;
         }
-
+        //Metodo que recibe parametros pero no regresa nada
         private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsLetter(e.KeyChar) && e.KeyChar != (char)Keys.Back && e.KeyChar != (char)Keys.Space)
@@ -111,10 +113,10 @@ namespace ProyectoFinal2DO
                 return;
             }
 
-            Empleado empleado = new Empleado(txtName.Text,txtPaternal.Text,txtMaternal.Text,txtCurp.Text, int.Parse(txtAge.Text), int.Parse(txtHoursWorked.Text), cmbTipoTrabajador.SelectedItem.ToString());
+            Empleado empleado = new Empleado(txtName.Text, txtPaternal.Text, txtMaternal.Text, txtCurp.Text, int.Parse(txtAge.Text), int.Parse(txtHoursWorked.Text), cmbTipoTrabajador.SelectedItem.ToString());
             empleado.Salary = txtSalary.Text;
 
-            empleado.Saludar();
+            MessageBox.Show(empleado.Saludate());
 
             string[] datos = new string[8];
             datos[0] = txtName.Text;
@@ -142,18 +144,15 @@ namespace ProyectoFinal2DO
             try
             {
                 int hoursWorked = Convert.ToInt32(txtHoursWorked.Text);
-                string jobType = cmbTipoTrabajador.SelectedItem.ToString();
-                double salary = 0;
+                string workstation = cmbTipoTrabajador.SelectedItem.ToString();
 
-                if (jobType == "Ingeniero")
-                {
-                    salary = hoursWorked * 250;
-                }
-                else if (jobType == "Obrero")
-                {
-                    salary = hoursWorked * 100;
-                }
+                // Crear un objeto Empleado con los datos actuales
+                Empleado empleado = new Empleado(txtName.Text, txtPaternal.Text, txtMaternal.Text, txtCurp.Text, int.Parse(txtAge.Text), hoursWorked, workstation);
 
+                // Obtener el salario calculado del objeto Empleado
+                double salary = empleado.CalculatedSalary;
+
+                // Mostrar el salario en el cuadro de texto
                 txtSalary.Text = salary.ToString("F2");
             }
             catch (FormatException)
@@ -239,7 +238,6 @@ namespace ProyectoFinal2DO
         }
         private void btnSaveWord_Click(object sender, EventArgs e)
         {
-            // Guardar los datos en un archivo de Word
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Archivo de Word|*.docx";
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
@@ -253,7 +251,6 @@ namespace ProyectoFinal2DO
 
                     Word.Table table = new Word.Table();
 
-                    // Crear una fila para los encabezados
                     Word.TableRow headerRow = new Word.TableRow();
                     foreach (ColumnHeader column in lvDatos.Columns)
                     {
@@ -277,12 +274,12 @@ namespace ProyectoFinal2DO
                     // Agregar bordes a la tabla
                     table.AppendChild(new Word.TableProperties(
                         new Word.TableBorders(
-                    new Word.TopBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
-                    new Word.BottomBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
-                    new Word.LeftBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
-                    new Word.RightBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
-                    new Word.InsideHorizontalBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
-                    new Word.InsideVerticalBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 }
+                            new Word.TopBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
+                            new Word.BottomBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
+                            new Word.LeftBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
+                            new Word.RightBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
+                            new Word.InsideHorizontalBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 },
+                            new Word.InsideVerticalBorder { Val = new EnumValue<Word.BorderValues>(Word.BorderValues.Single), Size = 6 }
                         )
                     ));
 
@@ -292,6 +289,11 @@ namespace ProyectoFinal2DO
 
                     MessageBox.Show("Data successfully saved WORD file.", "Saved Successfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
             }
         }
         private void btnSaveXml_Click(object sender, EventArgs e)
@@ -325,37 +327,39 @@ namespace ProyectoFinal2DO
 
                 xmlDoc.Save(filePath);
                 MessageBox.Show("Data successfully saved to XML file.", "Saved Successfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Abrir el archivo XML guardado con la aplicación predeterminada del sistema
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
             }
+            
         }
 
         private void btnSaveExcel_Click(object sender, EventArgs e)
-        { // Obtener la ruta de destino para guardar el archivo Excel
-          // Obtener la ruta de destino para guardar el archivo Excel
+        {
             string filePath = GetFilePath("Archivo de Excel|*.xlsx");
             if (filePath != null)
             {
                 try
                 {
-                    // Crear un nuevo archivo Excel
+                   
                     using (SpreadsheetDocument spreadsheetDoc = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
                     {
-                        // Agregar el WorkbookPart al documento
                         WorkbookPart workbookPart = spreadsheetDoc.AddWorkbookPart();
                         workbookPart.Workbook = new Workbook();
 
-                        // Agregar el WorksheetPart al WorkbookPart
                         WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
                         worksheetPart.Worksheet = new Worksheet(new SheetData());
 
-                        // Agregar una hoja de cálculo al libro de trabajo
                         Sheets sheets = spreadsheetDoc.WorkbookPart.Workbook.AppendChild(new Sheets());
                         Sheet sheet = new Sheet() { Id = spreadsheetDoc.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
                         sheets.Append(sheet);
 
-                        // Obtener los datos del ListView y escribirlos en el archivo Excel
                         SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
-                        // Escribir los encabezados en la primera fila
                         Row headerRow = new Row();
                         foreach (ColumnHeader column in lvDatos.Columns)
                         {
@@ -382,13 +386,22 @@ namespace ProyectoFinal2DO
                     }
 
                     MessageBox.Show("Data successfully saved to EXCEL file.", "Saved Successfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Abrir el archivo Excel guardado con la aplicación predeterminada del sistema
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    });
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error saving Excel file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+           
         }
+
         private string GetFilePath(string filter)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -401,23 +414,25 @@ namespace ProyectoFinal2DO
         }
         private void btnSavetxt_Click(object sender, EventArgs e)
         {
-            // Guardar los datos en un archivo de texto
+            
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Archivo de Texto|*.txt";
+
+            string filePath = string.Empty; 
+
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                string filePath = saveFileDialog.FileName;
+                filePath = saveFileDialog.FileName;
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
-                    // Escribir encabezados de columnas
+                   
                     foreach (ColumnHeader column in lvDatos.Columns)
                     {
                         writer.Write(column.Text);
                         writer.Write(", ");
                     }
-                    writer.WriteLine(); // Salto de línea después de los encabezados
+                    writer.WriteLine();
 
-                    // Escribir datos de ListView
                     foreach (ListViewItem item in lvDatos.Items)
                     {
                         for (int i = 0; i < item.SubItems.Count; i++)
@@ -432,11 +447,15 @@ namespace ProyectoFinal2DO
                     }
                 }
 
-                // Mostrar mensaje de confirmación
-
                 MessageBox.Show("Data successfully saved to TXT file.", "Saved Successfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
             }
-        }
+            }
 
         private void btnSaveJson_Click(object sender, EventArgs e)
         {
@@ -469,6 +488,20 @@ namespace ProyectoFinal2DO
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error saving JSON file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                try
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    };
+                    Process.Start(psi);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("An error occurred while trying to open the PDF file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -515,6 +548,20 @@ namespace ProyectoFinal2DO
 
                     // Mostrar mensaje de confirmación
                     MessageBox.Show("Data successfully saved to PDF file.", "Saved Successfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    try
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo
+                        {
+                            FileName = filePath,
+                            UseShellExecute = true
+                        };
+                        Process.Start(psi);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("An error occurred while trying to open the PDF file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }
@@ -588,7 +635,7 @@ namespace ProyectoFinal2DO
         // Método que no recibe parámetros ni regresa nada
         private void DateandTime()
         {
-            MessageBox.Show("La fecha y la hora es " + DateTime.Now.ToString(), "Fecha y hora", MessageBoxButtons.OK, MessageBoxIcon.None);
+            MessageBox.Show("The date and time is " + DateTime.Now.ToString(), "Date and time", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
 }

@@ -16,33 +16,22 @@ namespace ProyectoFinal2DO
         public string CURP { get; set; }
         public int Age { get; set; }
         public int HoursWorked { get; set; }
-        // Propiedad solo lectura
-        public string Salary { get; set; }
-
-
-
-        // Propiedad solo lectura
-        public string Identificacion { get; }
-
-
-
+        
+     
 
         // Constructor sin parámetros
         public Persona()
         {
-            Identificacion = Guid.NewGuid().ToString();
             Name = "";
             LastNameP = "";
             LastNameM = "";
             CURP = "";
-            Salary = "";
-
         }
 
         // Constructor con parámetros
-        public Persona(string nombre, string lastnamep, string lastnamem, string curp, int age, int hoursworked) : this()
+        public Persona(string name, string lastnamep, string lastnamem, string curp, int age, int hoursworked) :this()
         {
-            Name = nombre;
+            Name = name;
             LastNameP = lastnamep;
             LastNameM = lastnamem;
             CURP = curp;
@@ -51,15 +40,17 @@ namespace ProyectoFinal2DO
         }
 
 
-        // Métodos
-        // Método estático (si)
+      
+        // Método estático 
         public static void ShowMessage()
         {
-            MessageBox.Show("Buenos dias estimado empleado.");
+            MessageBox.Show("Good morning dear employee.");
         }
 
 
-
-
+        public virtual string Saludate()
+        {
+            return "Hello " + Name;
+        }
     }
 }

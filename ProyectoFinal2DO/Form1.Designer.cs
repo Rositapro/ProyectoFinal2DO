@@ -378,7 +378,7 @@
             // 
             lblWelcome.AutoSize = true;
             lblWelcome.Font = new Font("Segoe UI Semibold", 15.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
-            lblWelcome.Location = new Point(41, 12);
+            lblWelcome.Location = new Point(37, 12);
             lblWelcome.Name = "lblWelcome";
             lblWelcome.Size = new Size(200, 30);
             lblWelcome.TabIndex = 34;
